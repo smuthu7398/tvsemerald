@@ -1160,11 +1160,7 @@ $(document).ready(function () {
     autoHeight: true,
   });
   var unitPlanOpts = {
-    loop: false, margin: 20, nav: true, navText: masterplanNavText, dots: false, autoplay: false, items: 2,
-    responsive: {
-      0: { items: 1, nav: true },
-      768: { items: 2, nav: false },
-    },
+    loop: false, margin: 20, nav: false, navText: masterplanNavText, dots: false, autoplay: false, items: 1,
   };
   window.up2bhkclassicCarousel = $(".unitplan-2bhkclassic-carousel").owlCarousel(unitPlanOpts);
   window.up2bhkpremiumCarousel = $(".unitplan-2bhkpremium-carousel").owlCarousel(unitPlanOpts);

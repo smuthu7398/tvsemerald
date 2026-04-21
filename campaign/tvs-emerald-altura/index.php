@@ -1121,7 +1121,6 @@ $utmctr = (isset($_GET['utmctr']) ? $_GET['utmctr'] : '');
             <div id="unitplan-2bhkclassic-carousel-view" class="unitplan-slider-wrap w-full lg:max-w-[80%] lg:mx-auto relative">
               <div class="owl-carousel unitplan-2bhkclassic-carousel w-full">
                 <div class="item w-full"><a href="assets/images/unit-plans/2-BHK-Classic/2-BHK-Classic-1.webp" class="plan-popup"><img src="assets/images/unit-plans/2-BHK-Classic/2-BHK-Classic-1.webp" loading="eager" decoding="sync" class="w-full h-[200px] md:h-[285px] object-contain cursor-pointer"></a></div>
-                <div class="item w-full"><a href="assets/images/unit-plans/2-BHK-Classic/2-BHK-Classic-2.webp" class="plan-popup"><img src="assets/images/unit-plans/2-BHK-Classic/2-BHK-Classic-2.webp" loading="eager" decoding="sync" class="w-full h-[200px] md:h-[285px] object-contain cursor-pointer"></a></div>
               </div>
             </div>
 
@@ -1129,7 +1128,6 @@ $utmctr = (isset($_GET['utmctr']) ? $_GET['utmctr'] : '');
             <div id="unitplan-2bhkpremium-carousel-view" class="unitplan-slider-wrap w-full lg:max-w-[80%] lg:mx-auto hidden relative" style="display: none;">
               <div class="owl-carousel unitplan-2bhkpremium-carousel w-full">
                 <div class="item w-full"><a href="assets/images/unit-plans/2-BHK-Premium/2-BHK-Premium-1.webp" class="plan-popup"><img src="assets/images/unit-plans/2-BHK-Premium/2-BHK-Premium-1.webp" loading="eager" decoding="sync" class="w-full h-[200px] md:h-[285px] object-contain cursor-pointer"></a></div>
-                <div class="item w-full"><a href="assets/images/unit-plans/2-BHK-Premium/2-BHK-Premium-2.webp" class="plan-popup"><img src="assets/images/unit-plans/2-BHK-Premium/2-BHK-Premium-2.webp" loading="eager" decoding="sync" class="w-full h-[200px] md:h-[285px] object-contain cursor-pointer"></a></div>
               </div>
             </div>
 
@@ -1137,7 +1135,6 @@ $utmctr = (isset($_GET['utmctr']) ? $_GET['utmctr'] : '');
             <div id="unitplan-3bhkclassic-carousel-view" class="unitplan-slider-wrap w-full lg:max-w-[80%] lg:mx-auto hidden relative" style="display: none;">
               <div class="owl-carousel unitplan-3bhkclassic-carousel w-full">
                 <div class="item w-full"><a href="assets/images/unit-plans/3-BHK-Classic/3-BHK-Classic-1.webp" class="plan-popup"><img src="assets/images/unit-plans/3-BHK-Classic/3-BHK-Classic-1.webp" loading="eager" decoding="sync" class="w-full h-[200px] md:h-[285px] object-contain cursor-pointer"></a></div>
-                <div class="item w-full"><a href="assets/images/unit-plans/3-BHK-Classic/3-BHK-Classic-2.webp" class="plan-popup"><img src="assets/images/unit-plans/3-BHK-Classic/3-BHK-Classic-2.webp" loading="eager" decoding="sync" class="w-full h-[200px] md:h-[285px] object-contain cursor-pointer"></a></div>
               </div>
             </div>
 
@@ -1145,7 +1142,6 @@ $utmctr = (isset($_GET['utmctr']) ? $_GET['utmctr'] : '');
             <div id="unitplan-3bhkpremium-carousel-view" class="unitplan-slider-wrap w-full lg:max-w-[80%] lg:mx-auto hidden relative" style="display: none;">
               <div class="owl-carousel unitplan-3bhkpremium-carousel w-full">
                 <div class="item w-full"><a href="assets/images/unit-plans/3-BHK-Premium/3-BHK-Premium-1.webp" class="plan-popup"><img src="assets/images/unit-plans/3-BHK-Premium/3-BHK-Premium-1.webp" loading="eager" decoding="sync" class="w-full h-[200px] md:h-[285px] object-contain cursor-pointer"></a></div>
-                <div class="item w-full"><a href="assets/images/unit-plans/3-BHK-Premium/3-BHK-Premium-2.webp" class="plan-popup"><img src="assets/images/unit-plans/3-BHK-Premium/3-BHK-Premium-2.webp" loading="eager" decoding="sync" class="w-full h-[200px] md:h-[285px] object-contain cursor-pointer"></a></div>
               </div>
             </div>
 
@@ -1153,7 +1149,6 @@ $utmctr = (isset($_GET['utmctr']) ? $_GET['utmctr'] : '');
             <div id="unitplan-3bhkluxe-carousel-view" class="unitplan-slider-wrap w-full lg:max-w-[80%] lg:mx-auto hidden relative" style="display: none;">
               <div class="owl-carousel unitplan-3bhkluxe-carousel w-full">
                 <div class="item w-full"><a href="assets/images/unit-plans/3-BHK-Luxe/3-BHK-Luxe-1.webp" class="plan-popup"><img src="assets/images/unit-plans/3-BHK-Luxe/3-BHK-Luxe-1.webp" loading="eager" decoding="sync" class="w-full h-[200px] md:h-[285px] object-contain cursor-pointer"></a></div>
-                <div class="item w-full"><a href="assets/images/unit-plans/3-BHK-Luxe/3-BHK-Luxe-2.webp" class="plan-popup"><img src="assets/images/unit-plans/3-BHK-Luxe/3-BHK-Luxe-2.webp" loading="eager" decoding="sync" class="w-full h-[200px] md:h-[285px] object-contain cursor-pointer"></a></div>
               </div>
             </div>
 
