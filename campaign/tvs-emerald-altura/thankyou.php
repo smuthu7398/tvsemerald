@@ -95,7 +95,7 @@ $brochure_pdf_url = 'https://www.tvsemerald.com/wp-content/uploads/2026/04/TVS_A
     <?php if ($unit_plans_download): ?>
     <script>
         setTimeout(function () {
-            window.location.href = '<?php echo $unit_plans_pdf_url; ?>';
+            window.open('<?php echo $unit_plans_pdf_url; ?>', '_blank');
         }, 3000);
     </script>
     <?php endif; ?>
@@ -103,7 +103,7 @@ $brochure_pdf_url = 'https://www.tvsemerald.com/wp-content/uploads/2026/04/TVS_A
     <?php if ($brochure_download): ?>
     <script>
         setTimeout(function () {
-            window.location.href = '<?php echo $brochure_pdf_url; ?>';
+            window.open('<?php echo $brochure_pdf_url; ?>', '_blank');
         }, 3000);
     </script>
     <?php endif; ?>
