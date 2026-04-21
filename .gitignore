@@ -1,0 +1,16 @@
+# Sensitive / server-side
+config.php
+saveInfo.php
+admin/
+php_mailer/
+logs/
+old/
+sendFailedDataToEmailTemplate.html
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
