@@ -12,7 +12,7 @@ $fire_datalayer = !empty($_SESSION['fire_datalayer']);
 $unit_plans_download = isset($_GET['unitplans']) && $_GET['unitplans'] === 'true';
 $unit_plans_pdf_url = 'https://www.tvsemerald.com/wp-content/uploads/2026/04/Tvs-Altura-Unit-Plans-LR.pdf';
 $brochure_download = isset($_GET['brochure']) && $_GET['brochure'] === 'true';
-$brochure_pdf_url = 'assets/pdf/TVS Altura_Digital Brochure_AW_Uday_140426.pdf';
+$brochure_pdf_url = 'https://www.tvsemerald.com/wp-content/uploads/2026/04/TVS_Altura_Digital_Brochure_2026.pdf';
 ?>
 <!DOCTYPE html>
 <html lang="en">
