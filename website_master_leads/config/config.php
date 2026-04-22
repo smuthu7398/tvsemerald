@@ -45,5 +45,6 @@ return [
         'page_size_default' => (int) ($local['leads']['page_size_default'] ?? 25),
         'page_size_max'     => (int) ($local['leads']['page_size_max']     ?? 500),
         'page_size_options' => $local['leads']['page_size_options'] ?? [10, 25, 50, 100],
+        'max_leads'         => (int) ($local['leads']['max_leads'] ?? 0),
     ],
 ];

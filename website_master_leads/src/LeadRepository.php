@@ -47,6 +47,46 @@ final class LeadRepository
         return $GLOBALS['CONFIG']['table'];
     }
 
+    private static ?string $cutoffCache = null;
+    private static bool $cutoffResolved = false;
+
+    /**
+     * Returns the last_updated_time of the Nth most recent lead (N = config 'leads.max_leads'),
+     * or null when no cap is configured. Everything downstream restricts queries to rows
+     * with last_updated_time >= this cutoff, so the whole app sees only the newest N leads.
+     */
+    private static function cutoff(): ?string
+    {
+        if (self::$cutoffResolved) return self::$cutoffCache;
+        self::$cutoffResolved = true;
+
+        $max = (int) ($GLOBALS['CONFIG']['leads']['max_leads'] ?? 0);
+        if ($max <= 0) return self::$cutoffCache = null;
+
+        $pdo   = Db::pdo();
+        $table = self::table();
+        $stmt  = $pdo->prepare(
+            "SELECT last_updated_time FROM $table ORDER BY last_updated_time DESC LIMIT 1 OFFSET :off"
+        );
+        $stmt->bindValue(':off', $max - 1, PDO::PARAM_INT);
+        $stmt->execute();
+        $ts = $stmt->fetchColumn();
+        return self::$cutoffCache = ($ts !== false && $ts !== null) ? (string) $ts : null;
+    }
+
+    /** Append the cutoff condition to an existing WHERE fragment (or start one). */
+    private static function applyCutoff(string $whereSql, array $params): array
+    {
+        $cutoff = self::cutoff();
+        if ($cutoff === null) return [$whereSql, $params];
+
+        $params[':__cutoff'] = $cutoff;
+        $whereSql = $whereSql === ''
+            ? 'WHERE last_updated_time >= :__cutoff'
+            : $whereSql . ' AND last_updated_time >= :__cutoff';
+        return [$whereSql, $params];
+    }
+
     /**
      * Build [WHERE-clause, params[]] from filters.
      * @param array{project?:?string,search?:?string,date_from?:?string,date_to?:?string,source?:?string} $f
@@ -87,10 +127,8 @@ final class LeadRepository
             $where[] = '(' . implode(' OR ', $parts) . ')';
         }
 
-        return [
-            $where ? 'WHERE ' . implode(' AND ', $where) : '',
-            $params,
-        ];
+        $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+        return self::applyCutoff($whereSql, $params);
     }
 
     /**
@@ -119,13 +157,14 @@ final class LeadRepository
         [$whereSql, $params] = self::buildWhere($filters);
 
         // Total (without filters) — cheap count of scoped rows
-        $totalSql = 'SELECT COUNT(*) FROM ' . $table;
+        $totalWhere = '';
         $totalParams = [];
         if (!empty($scope['project'])) {
-            $totalSql .= ' WHERE project_name = :project';
+            $totalWhere = 'WHERE project_name = :project';
             $totalParams[':project'] = $scope['project'];
         }
-        $total = (int) self::scalar($pdo, $totalSql, $totalParams);
+        [$totalWhere, $totalParams] = self::applyCutoff($totalWhere, $totalParams);
+        $total = (int) self::scalar($pdo, "SELECT COUNT(*) FROM $table $totalWhere", $totalParams);
 
         // Filtered total
         $filteredSql = 'SELECT COUNT(*) FROM ' . $table . ' ' . $whereSql;
@@ -176,33 +215,32 @@ final class LeadRepository
         $where = '';
         $params = [];
         if (!empty($scope['project'])) {
-            $where = ' WHERE project_name = :project';
+            $where = 'WHERE project_name = :project';
             $params[':project'] = $scope['project'];
         }
+        [$where, $params] = self::applyCutoff($where, $params);
+        $andWhere = $where === '' ? 'WHERE' : $where . ' AND';
 
         $today = (int) self::scalar(
             $pdo,
-            "SELECT COUNT(*) FROM $table" . ($where ? $where . ' AND' : ' WHERE')
-                . ' DATE(last_updated_time) = CURDATE()',
+            "SELECT COUNT(*) FROM $table $andWhere DATE(last_updated_time) = CURDATE()",
             $params
         );
         $week = (int) self::scalar(
             $pdo,
-            "SELECT COUNT(*) FROM $table" . ($where ? $where . ' AND' : ' WHERE')
-                . ' last_updated_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)',
+            "SELECT COUNT(*) FROM $table $andWhere last_updated_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
             $params
         );
         $month = (int) self::scalar(
             $pdo,
-            "SELECT COUNT(*) FROM $table" . ($where ? $where . ' AND' : ' WHERE')
-                . ' last_updated_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)',
+            "SELECT COUNT(*) FROM $table $andWhere last_updated_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)",
             $params
         );
-        $total = (int) self::scalar($pdo, "SELECT COUNT(*) FROM $table" . $where, $params);
+        $total = (int) self::scalar($pdo, "SELECT COUNT(*) FROM $table $where", $params);
 
         $sourceSafe = "(PrimarySource IS NULL OR PrimarySource = ''"
                     . " OR (CHAR_LENGTH(PrimarySource) <= 50 AND PrimarySource REGEXP '^[A-Za-z0-9_ -]+$'))";
-        $topWhere = $where ? $where . " AND $sourceSafe" : " WHERE $sourceSafe";
+        $topWhere = $andWhere . ' ' . $sourceSafe;
         $topSources = self::all(
             $pdo,
             "SELECT COALESCE(NULLIF(PrimarySource,''),'(unknown)') AS source, COUNT(*) AS cnt
@@ -229,13 +267,15 @@ final class LeadRepository
         $where = '';
         $params = [];
         if (!empty($scope['project'])) {
-            $where = ' WHERE project_name = :project';
+            $where = 'WHERE project_name = :project';
             $params[':project'] = $scope['project'];
         }
+        [$where, $params] = self::applyCutoff($where, $params);
+        $andWhere = $where === '' ? 'WHERE' : $where . ' AND';
         $rows = self::all(
             $pdo,
             "SELECT DISTINCT PrimarySource FROM $table
-              $where " . ($where ? ' AND' : ' WHERE') . " PrimarySource IS NOT NULL
+              $andWhere PrimarySource IS NOT NULL
                 AND PrimarySource <> ''
                 AND CHAR_LENGTH(PrimarySource) <= 50
                 AND PrimarySource REGEXP '^[A-Za-z0-9_ -]+$'
@@ -249,12 +289,13 @@ final class LeadRepository
     {
         $pdo   = Db::pdo();
         $table = self::table();
+        [$where, $params] = self::applyCutoff("WHERE project_name LIKE '%TVS Emerald%'", []);
         $rows = self::all(
             $pdo,
             "SELECT DISTINCT project_name FROM $table
-              WHERE project_name LIKE '%TVS Emerald%'
+              $where
               ORDER BY project_name ASC LIMIT 100",
-            []
+            $params
         );
         return array_column($rows, 'project_name');
     }

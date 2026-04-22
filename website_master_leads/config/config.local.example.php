@@ -32,5 +32,6 @@ return [
         'page_size_default' => 25,                  // initial rows per page
         'page_size_max'     => 500,                 // server hard cap (prevents huge queries)
         'page_size_options' => [10, 25, 50, 100],   // values shown in the "Show N entries" dropdown
+        'max_leads'         => 0,                   // only show the newest N leads system-wide; 0 = unlimited
     ],
 ];
