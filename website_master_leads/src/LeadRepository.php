@@ -196,10 +196,13 @@ final class LeadRepository
         );
         $total = (int) self::scalar($pdo, "SELECT COUNT(*) FROM $table" . $where, $params);
 
+        $sourceSafe = "(PrimarySource IS NULL OR PrimarySource = ''"
+                    . " OR (CHAR_LENGTH(PrimarySource) <= 50 AND PrimarySource REGEXP '^[A-Za-z0-9_ -]+$'))";
+        $topWhere = $where ? $where . " AND $sourceSafe" : " WHERE $sourceSafe";
         $topSources = self::all(
             $pdo,
             "SELECT COALESCE(NULLIF(PrimarySource,''),'(unknown)') AS source, COUNT(*) AS cnt
-               FROM $table $where
+               FROM $table $topWhere
               GROUP BY source
               ORDER BY cnt DESC
               LIMIT 5",
