@@ -28,4 +28,9 @@ return [
         'lockout_minutes' => 15,
     ],
     'table' => 'tvsemerald_website_master_leads',
+    'leads' => [
+        'page_size_default' => 25,                  // initial rows per page
+        'page_size_max'     => 500,                 // server hard cap (prevents huge queries)
+        'page_size_options' => [10, 25, 50, 100],   // values shown in the "Show N entries" dropdown
+    ],
 ];

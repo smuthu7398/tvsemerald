@@ -141,9 +141,13 @@ final class LeadRepository
             $orderDir = strtolower($req['order'][0]['dir']) === 'asc' ? 'ASC' : 'DESC';
         }
 
+        $leadsCfg  = $GLOBALS['CONFIG']['leads'] ?? [];
+        $defaultLen = (int) ($leadsCfg['page_size_default'] ?? 25);
+        $maxLen     = (int) ($leadsCfg['page_size_max']     ?? 500);
+
         $start  = max(0, (int) ($req['start']  ?? 0));
-        $length = (int) ($req['length'] ?? 25);
-        if ($length <= 0 || $length > 500) $length = 25;
+        $length = (int) ($req['length'] ?? $defaultLen);
+        if ($length <= 0 || $length > $maxLen) $length = $defaultLen;
 
         $sql = 'SELECT * FROM ' . $table . ' ' . $whereSql
              . ' ORDER BY ' . $orderCol . ' ' . $orderDir

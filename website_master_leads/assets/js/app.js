@@ -68,12 +68,18 @@
     return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
+  const leadsCfg = window.APP_LEADS || {};
+  const pageSizeDefault = leadsCfg.pageSizeDefault || 25;
+  const pageSizeOptions = leadsCfg.pageSizeOptions && leadsCfg.pageSizeOptions.length
+    ? leadsCfg.pageSizeOptions
+    : [10, 25, 50, 100];
+
   const table = $('#leads_table').DataTable({
     processing: true,
     serverSide: true,
     deferRender: true,
-    pageLength: 25,
-    lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+    pageLength: pageSizeDefault,
+    lengthMenu: [pageSizeOptions, pageSizeOptions],
     order: [[7, 'desc']], // Date column (last visible)
     ajax: {
       url: 'api/leads.php',

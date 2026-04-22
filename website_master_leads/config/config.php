@@ -41,4 +41,9 @@ return [
         'lockout_minutes' => (int) ($local['throttle']['lockout_minutes'] ?? 15),
     ],
     'table' => $local['table'] ?? 'tvsemerald_website_master_leads',
+    'leads' => [
+        'page_size_default' => (int) ($local['leads']['page_size_default'] ?? 25),
+        'page_size_max'     => (int) ($local['leads']['page_size_max']     ?? 500),
+        'page_size_options' => $local['leads']['page_size_options'] ?? [10, 25, 50, 100],
+    ],
 ];

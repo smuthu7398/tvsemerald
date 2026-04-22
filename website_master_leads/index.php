@@ -190,6 +190,10 @@ $scopeLabel = $isAdmin ? 'All Projects' : ($user['project'] ?? $user['username']
       lifetime: <?= (int) $GLOBALS['CONFIG']['session']['lifetime'] ?>,
       now:      <?= time() ?>
     };
+    window.APP_LEADS = <?= json_encode([
+      'pageSizeDefault' => (int) $GLOBALS['CONFIG']['leads']['page_size_default'],
+      'pageSizeOptions' => array_values(array_map('intval', $GLOBALS['CONFIG']['leads']['page_size_options'])),
+    ], JSON_UNESCAPED_SLASHES) ?>;
   </script>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
