@@ -47,55 +47,20 @@ final class LeadRepository
         return $GLOBALS['CONFIG']['table'];
     }
 
-    private static ?array $cutoffCache = null;
-    private static bool $cutoffResolved = false;
-
     /**
-     * Returns the (last_updated_time, id) tuple of the Nth most recent lead, or null when no
-     * cap is configured. Using a tuple avoids tie bloat: if many rows share the boundary
-     * timestamp a plain ">=" on the timestamp alone would let all ties through, producing
-     * more than N results. Config key: 'leads.max_leads'.
-     * @return array{ts:string,id:int}|null
+     * Returns the FROM-clause source for every lead query. When 'leads.max_leads' is
+     * set to N > 0, every query reads from a derived table containing only the newest
+     * N rows by last_updated_time — so counts, pagination, stats, and distinct lookups
+     * all operate on exactly those N leads. When N <= 0, returns the raw table name.
      */
-    private static function cutoff(): ?array
+    private static function source(): string
     {
-        if (self::$cutoffResolved) return self::$cutoffCache;
-        self::$cutoffResolved = true;
-
-        $max = (int) ($GLOBALS['CONFIG']['leads']['max_leads'] ?? 0);
-        if ($max <= 0) return self::$cutoffCache = null;
-
-        $pdo   = Db::pdo();
         $table = self::table();
-        $stmt  = $pdo->prepare(
-            "SELECT last_updated_time, id FROM $table
-              ORDER BY last_updated_time DESC, id DESC
-              LIMIT 1 OFFSET :off"
-        );
-        $stmt->bindValue(':off', $max - 1, PDO::PARAM_INT);
-        $stmt->execute();
-        $row = $stmt->fetch();
-        if (!$row) return self::$cutoffCache = null;
-        return self::$cutoffCache = [
-            'ts' => (string) $row['last_updated_time'],
-            'id' => (int) $row['id'],
-        ];
-    }
-
-    /** Append the tuple cutoff condition to an existing WHERE fragment (or start one). */
-    private static function applyCutoff(string $whereSql, array $params): array
-    {
-        $cutoff = self::cutoff();
-        if ($cutoff === null) return [$whereSql, $params];
-
-        $params[':__cutoff_ts'] = $cutoff['ts'];
-        $params[':__cutoff_id'] = $cutoff['id'];
-        $clause = '(last_updated_time > :__cutoff_ts'
-                . ' OR (last_updated_time = :__cutoff_ts AND id >= :__cutoff_id))';
-        $whereSql = $whereSql === ''
-            ? 'WHERE ' . $clause
-            : $whereSql . ' AND ' . $clause;
-        return [$whereSql, $params];
+        $max = (int) ($GLOBALS['CONFIG']['leads']['max_leads'] ?? 0);
+        if ($max <= 0) return $table;
+        // $max is a safe integer (cast above). Inline — LIMIT cannot be parameterized
+        // inside a derived-table subquery on many MySQL versions.
+        return "(SELECT * FROM $table ORDER BY last_updated_time DESC LIMIT $max) AS scoped";
     }
 
     /**
@@ -138,8 +103,10 @@ final class LeadRepository
             $where[] = '(' . implode(' OR ', $parts) . ')';
         }
 
-        $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-        return self::applyCutoff($whereSql, $params);
+        return [
+            $where ? 'WHERE ' . implode(' AND ', $where) : '',
+            $params,
+        ];
     }
 
     /**
@@ -149,8 +116,8 @@ final class LeadRepository
      */
     public static function paginate(array $req, array $scope): array
     {
-        $pdo   = Db::pdo();
-        $table = self::table();
+        $pdo    = Db::pdo();
+        $source = self::source();
 
         $filters = [
             'project'   => $scope['project'] ?? ($req['project'] ?? null),
@@ -167,19 +134,17 @@ final class LeadRepository
 
         [$whereSql, $params] = self::buildWhere($filters);
 
-        // Total (without filters) — cheap count of scoped rows
+        // Total (scoped, no user filters) — counts only the capped set
         $totalWhere = '';
         $totalParams = [];
         if (!empty($scope['project'])) {
             $totalWhere = 'WHERE project_name = :project';
             $totalParams[':project'] = $scope['project'];
         }
-        [$totalWhere, $totalParams] = self::applyCutoff($totalWhere, $totalParams);
-        $total = (int) self::scalar($pdo, "SELECT COUNT(*) FROM $table $totalWhere", $totalParams);
+        $total = (int) self::scalar($pdo, "SELECT COUNT(*) FROM $source $totalWhere", $totalParams);
 
         // Filtered total
-        $filteredSql = 'SELECT COUNT(*) FROM ' . $table . ' ' . $whereSql;
-        $filtered = (int) self::scalar($pdo, $filteredSql, $params);
+        $filtered = (int) self::scalar($pdo, "SELECT COUNT(*) FROM $source $whereSql", $params);
 
         // Sorting — whitelist column name + direction
         $orderCol = 'last_updated_time';
@@ -199,7 +164,7 @@ final class LeadRepository
         $length = (int) ($req['length'] ?? $defaultLen);
         if ($length <= 0 || $length > $maxLen) $length = $defaultLen;
 
-        $sql = 'SELECT * FROM ' . $table . ' ' . $whereSql
+        $sql = "SELECT * FROM $source $whereSql"
              . ' ORDER BY ' . $orderCol . ' ' . $orderDir
              . ' LIMIT :limit OFFSET :offset';
 
@@ -220,8 +185,8 @@ final class LeadRepository
 
     public static function stats(array $scope): array
     {
-        $pdo   = Db::pdo();
-        $table = self::table();
+        $pdo    = Db::pdo();
+        $source = self::source();
 
         $where = '';
         $params = [];
@@ -229,25 +194,24 @@ final class LeadRepository
             $where = 'WHERE project_name = :project';
             $params[':project'] = $scope['project'];
         }
-        [$where, $params] = self::applyCutoff($where, $params);
         $andWhere = $where === '' ? 'WHERE' : $where . ' AND';
 
         $today = (int) self::scalar(
             $pdo,
-            "SELECT COUNT(*) FROM $table $andWhere DATE(last_updated_time) = CURDATE()",
+            "SELECT COUNT(*) FROM $source $andWhere DATE(last_updated_time) = CURDATE()",
             $params
         );
         $week = (int) self::scalar(
             $pdo,
-            "SELECT COUNT(*) FROM $table $andWhere last_updated_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
+            "SELECT COUNT(*) FROM $source $andWhere last_updated_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
             $params
         );
         $month = (int) self::scalar(
             $pdo,
-            "SELECT COUNT(*) FROM $table $andWhere last_updated_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)",
+            "SELECT COUNT(*) FROM $source $andWhere last_updated_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)",
             $params
         );
-        $total = (int) self::scalar($pdo, "SELECT COUNT(*) FROM $table $where", $params);
+        $total = (int) self::scalar($pdo, "SELECT COUNT(*) FROM $source $where", $params);
 
         $sourceSafe = "(PrimarySource IS NULL OR PrimarySource = ''"
                     . " OR (CHAR_LENGTH(PrimarySource) <= 50 AND PrimarySource REGEXP '^[A-Za-z0-9_ -]+$'))";
@@ -255,7 +219,7 @@ final class LeadRepository
         $topSources = self::all(
             $pdo,
             "SELECT COALESCE(NULLIF(PrimarySource,''),'(unknown)') AS source, COUNT(*) AS cnt
-               FROM $table $topWhere
+               FROM $source $topWhere
               GROUP BY source
               ORDER BY cnt DESC
               LIMIT 5",
@@ -273,19 +237,18 @@ final class LeadRepository
 
     public static function distinctSources(array $scope): array
     {
-        $pdo   = Db::pdo();
-        $table = self::table();
-        $where = '';
+        $pdo    = Db::pdo();
+        $source = self::source();
+        $where  = '';
         $params = [];
         if (!empty($scope['project'])) {
             $where = 'WHERE project_name = :project';
             $params[':project'] = $scope['project'];
         }
-        [$where, $params] = self::applyCutoff($where, $params);
         $andWhere = $where === '' ? 'WHERE' : $where . ' AND';
         $rows = self::all(
             $pdo,
-            "SELECT DISTINCT PrimarySource FROM $table
+            "SELECT DISTINCT PrimarySource FROM $source
               $andWhere PrimarySource IS NOT NULL
                 AND PrimarySource <> ''
                 AND CHAR_LENGTH(PrimarySource) <= 50
@@ -298,23 +261,22 @@ final class LeadRepository
 
     public static function distinctProjects(): array
     {
-        $pdo   = Db::pdo();
-        $table = self::table();
-        [$where, $params] = self::applyCutoff("WHERE project_name LIKE '%TVS Emerald%'", []);
+        $pdo    = Db::pdo();
+        $source = self::source();
         $rows = self::all(
             $pdo,
-            "SELECT DISTINCT project_name FROM $table
-              $where
+            "SELECT DISTINCT project_name FROM $source
+              WHERE project_name LIKE '%TVS Emerald%'
               ORDER BY project_name ASC LIMIT 100",
-            $params
+            []
         );
         return array_column($rows, 'project_name');
     }
 
     public static function exportCsv(array $scope, array $filters, $stream): void
     {
-        $pdo   = Db::pdo();
-        $table = self::table();
+        $pdo    = Db::pdo();
+        $source = self::source();
 
         if (!empty($scope['project'])) {
             $filters['project'] = $scope['project'];
@@ -322,7 +284,7 @@ final class LeadRepository
 
         [$whereSql, $params] = self::buildWhere($filters);
 
-        $sql = "SELECT * FROM $table $whereSql ORDER BY last_updated_time DESC LIMIT 2000";
+        $sql = "SELECT * FROM $source $whereSql ORDER BY last_updated_time DESC LIMIT 2000";
         $stmt = $pdo->prepare($sql);
         foreach ($params as $k => $v) $stmt->bindValue($k, $v);
         $stmt->execute();
