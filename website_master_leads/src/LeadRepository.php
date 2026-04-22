@@ -242,7 +242,7 @@ final class LeadRepository
         $rows = self::all(
             $pdo,
             "SELECT DISTINCT project_name FROM $table
-              WHERE project_name IS NOT NULL AND project_name <> ''
+              WHERE project_name LIKE '%TVS Emerald%'
               ORDER BY project_name ASC LIMIT 100",
             []
         );
