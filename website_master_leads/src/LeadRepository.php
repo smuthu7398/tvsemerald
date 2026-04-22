@@ -47,15 +47,17 @@ final class LeadRepository
         return $GLOBALS['CONFIG']['table'];
     }
 
-    private static ?string $cutoffCache = null;
+    private static ?array $cutoffCache = null;
     private static bool $cutoffResolved = false;
 
     /**
-     * Returns the last_updated_time of the Nth most recent lead (N = config 'leads.max_leads'),
-     * or null when no cap is configured. Everything downstream restricts queries to rows
-     * with last_updated_time >= this cutoff, so the whole app sees only the newest N leads.
+     * Returns the (last_updated_time, id) tuple of the Nth most recent lead, or null when no
+     * cap is configured. Using a tuple avoids tie bloat: if many rows share the boundary
+     * timestamp a plain ">=" on the timestamp alone would let all ties through, producing
+     * more than N results. Config key: 'leads.max_leads'.
+     * @return array{ts:string,id:int}|null
      */
-    private static function cutoff(): ?string
+    private static function cutoff(): ?array
     {
         if (self::$cutoffResolved) return self::$cutoffCache;
         self::$cutoffResolved = true;
@@ -66,24 +68,33 @@ final class LeadRepository
         $pdo   = Db::pdo();
         $table = self::table();
         $stmt  = $pdo->prepare(
-            "SELECT last_updated_time FROM $table ORDER BY last_updated_time DESC LIMIT 1 OFFSET :off"
+            "SELECT last_updated_time, id FROM $table
+              ORDER BY last_updated_time DESC, id DESC
+              LIMIT 1 OFFSET :off"
         );
         $stmt->bindValue(':off', $max - 1, PDO::PARAM_INT);
         $stmt->execute();
-        $ts = $stmt->fetchColumn();
-        return self::$cutoffCache = ($ts !== false && $ts !== null) ? (string) $ts : null;
+        $row = $stmt->fetch();
+        if (!$row) return self::$cutoffCache = null;
+        return self::$cutoffCache = [
+            'ts' => (string) $row['last_updated_time'],
+            'id' => (int) $row['id'],
+        ];
     }
 
-    /** Append the cutoff condition to an existing WHERE fragment (or start one). */
+    /** Append the tuple cutoff condition to an existing WHERE fragment (or start one). */
     private static function applyCutoff(string $whereSql, array $params): array
     {
         $cutoff = self::cutoff();
         if ($cutoff === null) return [$whereSql, $params];
 
-        $params[':__cutoff'] = $cutoff;
+        $params[':__cutoff_ts'] = $cutoff['ts'];
+        $params[':__cutoff_id'] = $cutoff['id'];
+        $clause = '(last_updated_time > :__cutoff_ts'
+                . ' OR (last_updated_time = :__cutoff_ts AND id >= :__cutoff_id))';
         $whereSql = $whereSql === ''
-            ? 'WHERE last_updated_time >= :__cutoff'
-            : $whereSql . ' AND last_updated_time >= :__cutoff';
+            ? 'WHERE ' . $clause
+            : $whereSql . ' AND ' . $clause;
         return [$whereSql, $params];
     }
 
