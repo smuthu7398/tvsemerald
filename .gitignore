@@ -1,7 +1,7 @@
 # Leads dashboard
-config/config.local.php
-storage/*.log
-storage/throttle/
+website_master_leads/config/config.local.php
+website_master_leads/storage/*.log
+website_master_leads/storage/throttle/
 .claude/
 
 # Campaign (Altura) - sensitive / server-side
