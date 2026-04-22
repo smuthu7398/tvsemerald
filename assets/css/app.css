@@ -1,0 +1,96 @@
+/* shadcn-style overrides for DataTables + base tweaks */
+
+html.dark {
+  color-scheme: dark;
+}
+html.dark body {
+  background-color: hsl(222.2 47.4% 11.2%);
+  color: hsl(210 40% 98%);
+}
+html.dark .bg-white,
+html.dark .bg-card { background-color: hsl(222.2 47.4% 14%) !important; color: hsl(210 40% 98%); }
+html.dark .text-muted-foreground { color: hsl(215 20.2% 65.1%) !important; }
+html.dark .border-border { border-color: hsl(217.2 32.6% 22%) !important; }
+html.dark .bg-muted\/40 { background-color: hsl(217.2 32.6% 17.5% / .5) !important; }
+html.dark input, html.dark select { background-color: hsl(222.2 47.4% 18%); color: hsl(210 40% 98%); }
+
+/* DataTables reset to shadcn feel */
+table.dataTable {
+  border-collapse: separate !important;
+  border-spacing: 0;
+  width: 100% !important;
+}
+table.dataTable thead th {
+  background: hsl(210 40% 96.1%);
+  color: hsl(222.2 47.4% 11.2%);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  border-bottom: 1px solid hsl(214.3 31.8% 91.4%);
+  padding: 10px 12px !important;
+  white-space: nowrap;
+}
+html.dark table.dataTable thead th { background: hsl(217.2 32.6% 20%); color: hsl(210 40% 98%); border-bottom-color: hsl(217.2 32.6% 25%); }
+
+table.dataTable tbody td {
+  padding: 10px 12px !important;
+  border-bottom: 1px solid hsl(214.3 31.8% 91.4%);
+  color: hsl(222.2 47.4% 11.2%);
+  font-size: 13px;
+  vertical-align: top;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html.dark table.dataTable tbody td { color: hsl(210 40% 98%); border-bottom-color: hsl(217.2 32.6% 22%); }
+
+table.dataTable tbody tr { cursor: pointer; transition: background .12s ease; }
+table.dataTable tbody tr:hover { background: hsl(210 40% 96.1%); }
+html.dark table.dataTable tbody tr:hover { background: hsl(217.2 32.6% 22%); }
+
+/* pagination */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+  border-radius: 6px !important;
+  border: 1px solid hsl(214.3 31.8% 91.4%) !important;
+  background: white !important;
+  color: hsl(222.2 47.4% 11.2%) !important;
+  padding: 6px 10px !important;
+  margin: 0 2px !important;
+  font-size: 12px !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+  background: hsl(222.2 47.4% 11.2%) !important;
+  color: hsl(210 40% 98%) !important;
+  border-color: hsl(222.2 47.4% 11.2%) !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+  background: hsl(210 40% 96.1%) !important;
+  color: hsl(222.2 47.4% 11.2%) !important;
+}
+
+/* length + filter inputs */
+.dataTables_wrapper .dataTables_length select,
+.dataTables_wrapper .dataTables_filter input {
+  border: 1px solid hsl(214.3 31.8% 91.4%) !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+  background: white;
+}
+html.dark .dataTables_wrapper .dataTables_length select,
+html.dark .dataTables_wrapper .dataTables_filter input { background: hsl(222.2 47.4% 18%); color: hsl(210 40% 98%); border-color: hsl(217.2 32.6% 25%) !important; }
+.dataTables_wrapper .dataTables_filter { display: none; } /* we use our own search */
+
+.dataTables_wrapper .dataTables_info {
+  color: hsl(215.4 16.3% 46.9%);
+  font-size: 12px;
+  padding-top: 10px !important;
+}
+html.dark .dataTables_wrapper .dataTables_info { color: hsl(215 20.2% 65.1%); }
+
+/* truncated cell expand on hover */
+table.dataTable tbody td[title]:hover { white-space: normal; overflow: visible; background: #fff7ed; }
+html.dark table.dataTable tbody td[title]:hover { background: hsl(217.2 32.6% 25%); }

@@ -1,0 +1,5 @@
+config/config.local.php
+storage/*.log
+storage/throttle/
+.claude/
+.DS_Store
