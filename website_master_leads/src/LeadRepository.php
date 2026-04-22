@@ -228,7 +228,10 @@ final class LeadRepository
         $rows = self::all(
             $pdo,
             "SELECT DISTINCT PrimarySource FROM $table
-              $where " . ($where ? ' AND' : ' WHERE') . " PrimarySource IS NOT NULL AND PrimarySource <> ''
+              $where " . ($where ? ' AND' : ' WHERE') . " PrimarySource IS NOT NULL
+                AND PrimarySource <> ''
+                AND CHAR_LENGTH(PrimarySource) <= 50
+                AND PrimarySource REGEXP '^[A-Za-z0-9_ -]+$'
               ORDER BY PrimarySource ASC LIMIT 50",
             $params
         );
